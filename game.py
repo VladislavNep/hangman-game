@@ -1,18 +1,14 @@
 import random
 from typing import Iterable
-
-from GameStatus import GameStatus
-from InvalidOperationError import InvalidOperationError
+from data.hangman_pics import HangmanPics
+from game_status import GameStatus
+from invalid_operation_error import InvalidOperationError
 
 
 class Game:
 
-    def __init__(self, allowed_misses: int = 6):
-
-        if 8 < allowed_misses < 5:
-            raise ValueError("число попыток доложно быть не менее 5 и не более 8.")
-
-        self.__allowed_misses = allowed_misses
+    def __init__(self):
+        self.__allowed_misses = 6
         self.__tries_counter = 0
         self.__tried_letters = []
         self.__open_indexes = []
@@ -22,8 +18,7 @@ class Game:
     def generate_word(self) -> str:
         """
         Генерация случайного слова для раунда
-        :ivar None
-        :return: str
+        :return: self.__word: str
         """
         filename = "data/WordsRus.txt"
 
@@ -33,17 +28,43 @@ class Game:
                 words.append(line.strip("\n"))
 
         rand_index = random.randint(0, len(words) - 1)
-
         self.__word = words[rand_index]
 
         self.__open_indexes = [False for _ in self.__word]
+
+        # открываем 1-2 случайные буквы в начале игры
+        if len(self.__open_indexes) > 5:
+            self.__open_indexes[random.randint(0, len(self.__open_indexes) - 1)] = True
+            self.__open_indexes[random.randint(0, len(self.__open_indexes) - 1)] = True
+        else:
+            self.__open_indexes[random.randint(0, len(self.__open_indexes) - 1)] = True
+
         self.__game_status = GameStatus.IN_PROGRESS
 
         return self.__word
 
+    def start_board(self) -> Iterable[str]:
+        """
+        Генерация начального поля
+        :return: board: Iterable[str]
+        """
+        start = []
+        for i, val in enumerate(self.word):
+            cur_letter = val
+            if self.__open_indexes[i]:
+                start.append(cur_letter)
+            else:
+                start.append("_")
+        return HangmanPics(''.join(start)).hangman_pics[0]
+
     def guess_letter(self, letter: str) -> Iterable[str]:
+        """
+        Проверяем введенную букву, если такая имеется, то открываем ее
+        :param letter: str
+        :return: hangman_pics: Iterable[str]
+        """
         if self.tries_counter == self.allowed_misses:
-            raise InvalidOperationError(f"Превышено максимальное число промахов. Допустимо {self.allowed_misses}")
+            raise InvalidOperationError(f'Превышено максимальное число промахов. Допустимо {self.allowed_misses}')
 
         if self.game_status != GameStatus.IN_PROGRESS:
             raise InvalidOperationError(f"несоответствующий статус игры: {self.game_status}")
@@ -51,8 +72,8 @@ class Game:
         open_any = False
         result = []
 
-        for i, c in enumerate(self.word):
-            cur_letter = c
+        for i, val in enumerate(self.word):
+            cur_letter = val
             if cur_letter == letter:
                 self.__open_indexes[i] = True
                 open_any = True
@@ -60,21 +81,26 @@ class Game:
             if self.__open_indexes[i]:
                 result.append(cur_letter)
             else:
-                result.append("-")
+                result.append("_")
 
         if not open_any:
             self.__tries_counter += 1
 
         self.__tried_letters.append(letter)
 
+        # изменение статуса игры, если игрок выйграл или проиграл
         if self.__is_winning():
             self.__game_status = GameStatus.WON
         elif self.tries_counter == self.allowed_misses:
             self.__game_status = GameStatus.LOST
 
-        return result
+        return HangmanPics(''.join(result)).hangman_pics[self.__tries_counter]
 
     def __is_winning(self):
+        """
+        Проверка, выйграл ли игрок
+        :return: bool
+        """
         for cur in self.__open_indexes:
             if not cur:
                 return False

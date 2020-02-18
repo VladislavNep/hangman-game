@@ -11,16 +11,17 @@ word = game.generate_word()
 letters_count = len(word)
 
 print(f"Слово состоит из {letters_count} букв")
-print("Попробуй угадать слово буква за буквой")
+print("Попробуй угадать слово по буквам")
+print(game.start_board())
+
 
 while game.game_status == game.in_progress:
-    letter = input("Выбери букву")
-    state = game.guess_letter(letter)
+    letter = input("Выбери букву \n")
 
-    print(chars_list_to_str(state))
+    print(game.guess_letter(letter))
 
     print(f"Оставшиеся попытки: {game.remaining_tries}")
-    print(f"Использованные буквы: {chars_list_to_str(game.tried_letters)}")
+    print(f"Использованные буквы: {chars_list_to_str(game.tried_letters)} \n")
 
 if game.game_status == game.lost:
     print("Вы проиграли")
