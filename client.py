@@ -1,4 +1,4 @@
-from Game import Game
+from game import Game
 
 
 def chars_list_to_str(chars):
